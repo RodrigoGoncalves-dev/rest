@@ -1,4 +1,5 @@
 const mysql = require("../connection/conn").pool;
+
 class ProductController {
   index(req, res) {
 
@@ -33,6 +34,7 @@ class ProductController {
                 idproduct: prod.idproducts,
                 name: prod.name,
                 price: prod.price,
+                product_image: prod.product_image,
                 request: {
                   type: "GET",
                   url: "http://localhost:3000/products/" + prod.idproducts
@@ -54,6 +56,7 @@ class ProductController {
     const product = {
       name: req.body.name,
       price: req.body.price,
+      product_image: req.file.path.replace("\\", "/"),
     }
 
     mysql.getConnection((error, conn) => {
@@ -64,8 +67,8 @@ class ProductController {
         });
       }
       conn.query(
-        "UPDATE products set name=?, price=? WHERE idproducts=?",
-        [product.name, product.price, id],
+        "UPDATE products set name=?, price=?, product_image=? WHERE idproducts=?",
+        [product.name, product.price, product.product_image, id],
         (error, result, field) => {
           conn.release();
 
@@ -75,8 +78,6 @@ class ProductController {
               error: error,
             });
           }
-
-          const id = result.insertId;
 
           const response = {
             message: "Produto alterado com sucesso",
@@ -99,6 +100,7 @@ class ProductController {
     const product = {
       name: req.body.name,
       price: req.body.price,
+      product_image: req.file.path.replace("\\", "/"),
     }
 
     mysql.getConnection((error, conn) => {
@@ -109,8 +111,8 @@ class ProductController {
         });
       }
       conn.query(
-        "INSERT INTO products(name, price) VALUES (?,?)",
-        [product.name, product.price],
+        "INSERT INTO products(name, price, product_image) VALUES (?,?,?)",
+        [product.name, product.price, product.product_image],
         (error, result, field) => {
           conn.release();
 
@@ -173,6 +175,7 @@ class ProductController {
                 idproduct: prod.idproducts,
                 name: prod.name,
                 price: prod.price,
+                product_image: prod.product_image,
                 request: {
                   type: "GET",
                   url: "http://localhost:3000/products/" + prod.idproducts
@@ -211,13 +214,13 @@ class ProductController {
           }
 
           const date = Date.now();
-          const actualDate = new Date(date);
+          const currentDate = new Date(date);
 
           const response = {
             message: "Produto deletado com sucesso",
             request: {
               type: "DELETE",
-              date: actualDate.toLocaleDateString() + " " + actualDate.toLocaleTimeString()
+              date: currentDate.toLocaleDateString() + " " + currentDate.toLocaleTimeString()
             }
           };
 
