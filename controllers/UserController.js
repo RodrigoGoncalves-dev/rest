@@ -55,7 +55,6 @@ class UserController {
       const user = {
         username: req.body.username,
         email: req.body.email,
-        user_password: req.body.user_password
       }
 
       const query = 'SELECT * FROM users WHERE email = ?';
@@ -64,7 +63,7 @@ class UserController {
 
       if(result.length == 0) return res.status(401).send({ message: "Falha na autenticação" });
 
-      bcrypt.compare(user.user_password, result[0].user_password, (error, results) => {
+      bcrypt.compare(req.body.user_password, result[0].user_password, (error, results) => {
         if(error) return res.status(401).send({ message: "Falha na autenticação" });
         if(results) {
           const token = jwt.sign({
@@ -78,7 +77,7 @@ class UserController {
         return res.status(401).send({ message: "Falha na autenticação" });
       });
     } catch (error) {
-      if(error) return res.status(500).send({ message: 'Houve um erro', error: error })
+      if(error) return res.status(500).send({ message: 'Houve um erro', error: error });
     }
   }
 }
