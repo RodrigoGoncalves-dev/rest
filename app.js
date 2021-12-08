@@ -6,6 +6,8 @@ const cors = require("cors");
 const routeProduct = require("./routes/products");
 const routeDemand = require("./routes/demands");
 const routeUser = require("./routes/users");
+const routeClient = require("./routes/clients");
+
 const bodyParser = require("body-parser");
 
 app.use(cors("*"));
@@ -18,6 +20,7 @@ app.use(bodyParser.json());
 app.use("/products", routeProduct);
 app.use("/demands", routeDemand);
 app.use("/users", routeUser);
+app.use("/clients", routeClient);
 
 app.use((req, res, next) => {
   const erro = new Error("Não encontrada");
