@@ -5,6 +5,8 @@ class DemandController {
     try {
       const query = `
         SELECT 
+          clients.client_name,
+          clients.id_client,
           demands.iddemands,
           demands.amounts,
           products.idproducts,
@@ -12,15 +14,19 @@ class DemandController {
           products.name
         FROM demands
         INNER JOIN products
-        ON products.idproducts = demands.idproducts;
+        ON products.idproducts = demands.idproducts
+        INNER JOIN clients
+        ON clients.id_client = demands.id_client
+        WHERE clients.id_client = (?);
       `;
 
-      const result = await mysql.execute(query);
+      const result = await mysql.execute(query, [req.client.id_client]);
 
       const response = {
         demands: result.map(demand => {
           return {
             id_demand: demand.iddemands,
+            client_name: demand.client_name,
             product: {
               id_product: demand.idproducts,
               name: demand.name,
@@ -52,7 +58,7 @@ class DemandController {
         amounts: req.body.amounts
       };
 
-      const query = "SELECT * FROM products WHERE idproducts=?";
+      const query = "SELECT * FROM products WHERE idproducts=(?)";
 
       const result = await mysql.execute(query, [demand.id_product]);
 
@@ -63,9 +69,9 @@ class DemandController {
       }
 
       try {
-        const query = "INSERT INTO demands(idproducts, amounts) VALUES (?,?)";
+        const query = "INSERT INTO demands(idproducts, amounts, id_client) VALUES (?,?,?)";
 
-        const result = mysql.execute(query, [demand.id_product, demand.amounts]);
+        const result = mysql.execute(query, [demand.id_product, demand.amounts, req.client.id_client]);
 
         if (result.length == 0) {
           return res.status(404).send({
@@ -146,23 +152,44 @@ class DemandController {
         amount: req.body.amount,
       }
 
-      const query = "UPDATE demands set idproducts=?, amounts=? WHERE iddemands=?";
+      const query = "SELECT * FROM demands WHERE idproducts=? AND iddemands=?";
 
-      const result = await mysql.execute(query, [demand.id_product, demand.amount, id]);
+      const params = [demand.id_product, id];
 
-      const id_demand = result.insertId;
+      const result = await mysql.execute(query, params);
 
-      const response = {
-        message: "Pedido alterado com sucesso",
-        id_demand: id_demand,
-        product: demand,
-        request: {
-          type: "PATCH",
-          url: "http://localhost:3000/demands/" + id
-        }
+      if(result.length == 0) {
+        return res.status(401).send({ message: "Nenhum pedido foi encontrado com esse ID"});
       }
 
-      return res.status(201).send(response);
+      try {
+        
+        const query = `
+          UPDATE demands INNER JOIN clients 
+            ON clients.id_client = demands.id_client
+            set idproducts=(?), amounts=(?) 
+          WHERE iddemands=(?) AND clients.id_client=(?);
+        `;
+  
+        await mysql.execute(query, [demand.id_product, demand.amount, id, req.client.id_client]);
+  
+        const response = {
+          message: "Pedido alterado com sucesso",
+          id_demand: id,
+          product: demand,
+          request: {
+            type: "PATCH",
+            url: "http://localhost:3000/demands/" + id
+          }
+        }
+  
+        return res.status(201).send(response);
+      } catch (error) {
+        return res.status(500).send({
+          message: "Houve um erro!",
+          error: error,
+        });
+      }
 
     } catch (error) {
       return res.status(500).send({
@@ -173,12 +200,25 @@ class DemandController {
   }
 
   async delete(req, res) {
+
+    const id = req.params.id;
+
+    const query = "SELECT * FROM demands WHERE iddemands=?";
+
+    const result = await mysql.execute(query, [id]);
+
+    if (result.length == 0) {
+      return res.status(404).send({
+        message: "Nenhum pedido foi encontrado com esse ID"
+      });
+    }
+
     try {
-      const id = req.params.id;
+      
 
-      const query = "DELETE FROM demands WHERE iddemands=?";
+      const query = "DELETE FROM demands WHERE iddemands=(?)";
 
-      await mysql.execute(query, [id]);
+      await mysql.execute(query, [id, req.client.id_client]);
 
       const date = Date.now();
       const currentDate = new Date(date);
