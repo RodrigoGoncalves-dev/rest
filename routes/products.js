@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const router = new Router();
 const productController = require("../controllers/ProductController");
-const login = require("../middleware/middlewareLogin");
+const user = require("../middleware/middlewareUser");
 
 const multer = require("multer");
 
@@ -31,9 +31,9 @@ const upload = multer({
 });
 
 router.get("/", productController.index);
-router.post("/", login, upload.single("product_image"),productController.store);
+router.post("/", user, upload.single("product_image"),productController.store);
 router.get("/:id", productController.show);
-router.patch("/:id", login, upload.single("product_image"),productController.update);
-router.delete("/:id", login, productController.delete);
+router.patch("/:id", user, upload.single("product_image"),productController.update);
+router.delete("/:id", user, productController.delete);
 
 module.exports = router;
