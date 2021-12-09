@@ -1,3 +1,5 @@
 .env
 node_modules
 uploads/*
+coverage
+__test__/upload/*
