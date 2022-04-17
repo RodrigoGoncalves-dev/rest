@@ -10,7 +10,7 @@ describe("TEST /users", () => {
       email: `rodrigo${random}@test.com`,
       user_password: "123456"
     }).set("Content-Type", "application/json")
-    .expect(201);
+      .expect(201);
 
     expect(response.ok).toBeTruthy();
   })
