@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const router = new Router();
-const productController = require("../../controllers/ProductController");
+const productController = require("../controllers/ProductController");
 const user = require("../middleware/middlewareUser");
 
 const multer = require("multer");
