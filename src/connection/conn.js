@@ -11,13 +11,13 @@ const pool = mysql.createPool({
   port: process.env.MYSQL_PORT,
 });
 
-exports.execute = (query, params=[]) => {
+exports.execute = (query, params = []) => {
   return new Promise((resolve, reject) => {
     pool.query(query, params, (error, result, fields) => {
-      if(error) {
+      if (error) {
         reject(error);
       }
-      if(resolve) {
+      if (resolve) {
         resolve(result);
       }
     });
