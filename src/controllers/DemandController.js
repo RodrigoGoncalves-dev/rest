@@ -1,4 +1,5 @@
 const mysql = require("../connection/conn");
+const HttpResponse = require("../handlers/http-response");
 class DemandController {
   async index(req, res) {
 
@@ -25,58 +26,48 @@ class DemandController {
       const response = {
         demands: result.map(demand => {
           return {
-            id_demand: demand.iddemands,
-            client_name: demand.client_name,
+            id_demand: iddemands,
+            client_name: client_name,
             product: {
-              id_product: demand.idproducts,
-              name: demand.name,
-              price: demand.price,
-              amount: demand.amounts,
-              total_price: demand.amounts * demand.price
+              id_product: idproducts,
+              name: name,
+              price: price,
+              amount: amounts,
+              total_price: amounts * price
             },
             request: {
               type: "GET",
-              url: "http://localhost:3000/demands/" + demand.iddemands
+              url: "http://localhost:3000/demands/" + iddemands
             }
           }
         })
       }
 
-      return res.status(200).send(response);
+      return HttpResponse.ok(res, response);
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 
   async store(req, res) {
     try {
-      const demand = {
-        id_product: req.body.id_product,
-        amounts: req.body.amounts
-      };
+      const { id_product, amounts } = req.body;
 
       const query = "SELECT * FROM products WHERE idproducts=(?)";
 
-      const result = await mysql.execute(query, [demand.id_product]);
+      const result = await mysql.execute(query, [id_product]);
 
       if (result.length == 0) {
-        return res.status(404).send({
-          message: "Nenhum pedido foi encontrado com esse ID"
-        });
+        return HttpResponse.notFound(res, "Nenhum pedido foi encontrado com esse ID");
       }
 
       try {
         const query = "INSERT INTO demands(idproducts, amounts, id_client) VALUES (?,?,?)";
 
-        const result = mysql.execute(query, [demand.id_product, demand.amounts, req.client.id_client]);
+        const result = mysql.execute(query, [id_product, amounts, req.client.id_client]);
 
         if (result.length == 0) {
-          return res.status(404).send({
-            message: "Nenhum pedido foi encontrado com esse ID"
-          });
+          return HttpResponse.notFound(res, "Nenhum pedido foi encontrado com esse ID");
         }
 
         const id_demands = result.insertId;
@@ -91,18 +82,12 @@ class DemandController {
           }
         }
 
-        return res.status(201).send(response);
+        return HttpResponse.created(res, response);
       } catch (error) {
-        return res.status(500).send({
-          message: "Houve um erro!",
-          error: error,
-        });
+        return HttpResponse.serverError(res);
       }
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 
@@ -115,9 +100,7 @@ class DemandController {
       const result = await mysql.execute(query, [id]);
 
       if (result.length == 0) {
-        return res.status(404).send({
-          message: "Nenhum pedido foi encontrado com esse ID"
-        });
+        return HttpResponse.notFound(res, "Nenhum pedido foi encontrado com esse ID");
       }
 
       const response = {
@@ -133,12 +116,9 @@ class DemandController {
         }),
       }
 
-      return res.status(200).send(response);
+      return HttpResponse.ok(res, response);
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 
@@ -154,25 +134,25 @@ class DemandController {
 
       const query = "SELECT * FROM demands WHERE idproducts=? AND iddemands=?";
 
-      const params = [demand.id_product, id];
+      const params = [id_product, id];
 
       const result = await mysql.execute(query, params);
 
-      if(result.length == 0) {
-        return res.status(401).send({ message: "Nenhum pedido foi encontrado com esse ID"});
+      if (result.length == 0) {
+        return HttpResponse.notFound(res, "Nenhum pedido foi encontrado com esse ID");
       }
 
       try {
-        
+
         const query = `
           UPDATE demands INNER JOIN clients 
             ON clients.id_client = demands.id_client
             set idproducts=(?), amounts=(?) 
           WHERE iddemands=(?) AND clients.id_client=(?);
         `;
-  
-        await mysql.execute(query, [demand.id_product, demand.amount, id, req.client.id_client]);
-  
+
+        await mysql.execute(query, [id_product, amount, id, req.client.id_client]);
+
         const response = {
           message: "Pedido alterado com sucesso",
           id_demand: id,
@@ -182,20 +162,14 @@ class DemandController {
             url: "http://localhost:3000/demands/" + id
           }
         }
-  
-        return res.status(200).send(response);
+
+        return HttpResponse.ok(res, response);
       } catch (error) {
-        return res.status(500).send({
-          message: "Houve um erro!",
-          error: error,
-        });
+        return HttpResponse.serverError(res);
       }
 
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 
@@ -208,13 +182,11 @@ class DemandController {
     const result = await mysql.execute(query, [id]);
 
     if (result.length == 0) {
-      return res.status(404).send({
-        message: "Nenhum pedido foi encontrado com esse ID"
-      });
+      return HttpResponse.notFound(res, "Nenhum pedido foi encontrado com esse ID");
     }
 
     try {
-      
+
 
       const query = "DELETE FROM demands WHERE iddemands=(?)";
 
@@ -231,13 +203,10 @@ class DemandController {
         }
       };
 
-      return res.status(202).send(response);
+      return HttpResponse.deleted(res, response);
 
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 }

@@ -1,4 +1,5 @@
 const mysql = require("../connection/conn");
+const HttpResponse = require("../handlers/http-response");
 
 class ProductController {
   async index(req, res) {
@@ -9,9 +10,7 @@ class ProductController {
       const result = await mysql.execute(query);
 
       if (result.length == 0) {
-        return res.status(404).send({
-          message: "Nenhum produto foi encontrado"
-        });
+        return HttpResponse.notFound(res, "Nenhum produto foi encontrado");
       }
 
       const response = {
@@ -30,12 +29,9 @@ class ProductController {
         }),
       }
 
-      return res.status(200).send(response);
+      return HttpResponse.ok(res, response);
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 
@@ -44,15 +40,12 @@ class ProductController {
     try {
       const id = req.params.id;
 
-      const product = {
-        name: req.body.name,
-        price: req.body.price,
-        product_image: req.file.path.replace("\\", "/"),
-      }
+      const { name, price } = res.body;
+      const { product_image } = req.file.path.replace("\\", "/");
 
       const query = "UPDATE products set name=?, price=?, product_image=? WHERE idproducts=?";
 
-      const field = [product.name, product.price, product.product_image, id];
+      const field = [name, price, product_image, id];
 
       await mysql.execute(query, field);
 
@@ -66,27 +59,22 @@ class ProductController {
         }
       }
 
-      return res.status(200).send(response);
+      return HttpResponse.ok(res, response);
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 
   async store(req, res) {
 
     try {
-      const product = {
-        name: req.body.name,
-        price: req.body.price,
-        product_image: req.file.path.replace("\\", "/"),
-      }
+
+      const { name, price } = res.body;
+      const { product_image } = req.file.path.replace("\\", "/");
 
       const query = "INSERT INTO products(name, price, product_image) VALUES (?,?,?)";
 
-      const fields = [product.name, product.price, product.product_image];
+      const fields = [name, price, product_image];
 
       const result = await mysql.execute(query, fields);
 
@@ -102,12 +90,9 @@ class ProductController {
         }
       }
 
-      return res.status(201).send(response);
+      return HttpResponse.created(res, response);
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 
@@ -120,9 +105,7 @@ class ProductController {
       const result = await mysql.execute(query, [id]);
 
       if (result.length == 0) {
-        return res.status(404).send({
-          message: "Nenhum produto foi encontrado com esse ID"
-        });
+        return HttpResponse.notFound(res, "Nenhum produto foi encontrado com esse ID");
       }
 
       const response = {
@@ -140,12 +123,9 @@ class ProductController {
         }),
       }
 
-      return res.status(200).send(response);
+      return HttpResponse.ok(res, response);
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 
@@ -169,13 +149,10 @@ class ProductController {
         }
       };
 
-      return res.status(202).send(response);
+      return HttpResponse.deleted(res, response);
 
     } catch (error) {
-      return res.status(500).send({
-        message: "Houve um erro!",
-        error: error,
-      });
+      return HttpResponse.serverError(res);
     }
   }
 }

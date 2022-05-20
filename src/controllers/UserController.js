@@ -1,34 +1,32 @@
 const mysql = require("../connection/conn");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const HttpResponse = require("../handlers/http-response");
+const SmallParamError = require("../handlers/small-param-error");
 
 class UserController {
   async store(req, res, next) {
 
     try {
-      const user = {
-        username: req.body.username,
-        email: req.body.email,
-        user_password: req.body.user_password
-      }
+      const { username, email, user_password } = req.body;
 
-      if (user.user_password.length < 6) return res.send({ message: "Senha com menos de 6 caractes não é aceito!" });
+      if (email === "" || user_password.length < 6) return HttpResponse.badRequest(res, new SmallParamError());
 
       const query = "SELECT * FROM users WHERE email = ?";
 
-      const field = [user.email];
+      const field = [email];
 
       const result = await mysql.execute(query, field);
 
       if (result.length > 0) {
-        res.status(409).send({ message: "Email já existente" });
+        HttpResponse.conflictError(res, "E-mail já existente");
         return;
       }
 
-      bcrypt.hash(user.user_password, 12, async (errBcrypt, hash) => {
+      bcrypt.hash(user_password, 12, async (errBcrypt, hash) => {
         const query = "INSERT INTO users (username, email, user_password) VALUES (?,?,?);";
 
-        const field = [user.username, user.email, hash];
+        const field = [username, email, hash];
 
         const result = await mysql.execute(query, field);
 
@@ -38,32 +36,31 @@ class UserController {
           message: "Usuário criado com sucesso",
           id_user: id,
           user: {
-            username: user.username,
-            email: user.email,
+            username: username,
+            email: email,
           }
         }
 
-        return res.status(201).send(response);
+        return HttpResponse.created(res, response);
       });
     } catch (error) {
-      return res.status(500).send({ message: "Ocorreu um erro!", error: error });
+      return HttpResponse.serverError(res);
     }
   }
 
   async login(req, res) {
     try {
-      const user = {
-        email: req.body.email,
-        user_password: req.body.user_password,
-      }
+      const { email, user_password } = req.body;
+
+      if (email === "" || user_password.length < 6) return HttpResponse.badRequest(res, new SmallParamError());
 
       const query = 'SELECT * FROM users WHERE email = ?';
 
-      const result = await mysql.execute(query, [user.email]);
+      const result = await mysql.execute(query, [email]);
 
-      if (result.length == 0) return res.status(401).send({ message: "Falha na autenticação" });
+      if (result.length == 0) return HttpResponse.unauthorizedError(res, "Falha na autenticação");
 
-      bcrypt.compare(user.user_password, result[0].user_password, (error, results) => {
+      bcrypt.compare(user_password, result[0].user_password, (error, results) => {
         if (error) return res.status(401).send({ message: "Falha na autenticação" });
 
         const token = jwt.sign({
@@ -72,10 +69,10 @@ class UserController {
         }, process.env.JWT_KEY, {
           expiresIn: "1h"
         });
-        return res.status(200).send({ message: "Autenticado com sucesso", token: token })
+        return HttpResponse.ok(res, "Autenticado com sucesso", token)
       });
     } catch (error) {
-      if (error) return res.status(500).send({ message: 'Houve um erro', error: error });
+      if (error) return HttpResponse.serverError(res);
     }
   }
 }
