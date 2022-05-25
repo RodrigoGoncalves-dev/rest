@@ -14,4 +14,4 @@ jobs:
           ${{ github.event_name }} commit in *${{ github.repository }}* at *${{ github.ref_name }}* by *"${{ github.actor }}"*.
           
           Commit message: 
-             • [*${{ github.event.commits[0].message }}*](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+             • [*${{ github.event.commits[0].message }}*](https://github.com/${{ github.repository }}/commit/${{ github.sha }});
