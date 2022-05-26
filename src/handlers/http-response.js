@@ -1,6 +1,7 @@
-const ConflictError = require('./confict-error');
+const ConflictError = require('./conflict-error');
 const ServerError = require('./server-error');
 const UnauthorizedError = require('./unauthorized-error');
+const UnprocessableError = require('./unprocessable-error');
 
 module.exports = class HttpResponse {
   static badRequest(res, error) {
@@ -40,6 +41,16 @@ module.exports = class HttpResponse {
     });
   };
 
+  static unprocessableError(res) {
+    return res.status(422).send({
+      statusCode: 422,
+      body: {
+        message: new UnprocessableError().message,
+        error: new UnprocessableError().name,
+      }
+    });
+  }
+
   static unauthorizedError(res, message) {
     return res.status(401).send({
       statusCode: 401,
@@ -50,18 +61,8 @@ module.exports = class HttpResponse {
     });
   };
 
-  static ok(res, data, token) {
-    if (token) {
-      return res.status(200).send({
-        statusCode: 200,
-        body: {
-          data: {
-            message: data,
-            token: token
-          },
-        },
-      })
-    }
+  static ok(res, data) {
+    
     return res.status(200).send({
       statusCode: 200,
       body: data,

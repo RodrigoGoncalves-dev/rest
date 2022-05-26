@@ -58,10 +58,10 @@ class UserController {
 
       const result = await mysql.execute(query, [email]);
 
-      if (result.length == 0) return HttpResponse.unauthorizedError(res, "Falha na autenticação");
+      if (result.length == 0) return HttpResponse.unprocessableError(res);
 
       bcrypt.compare(user_password, result[0].user_password, (error, results) => {
-        if (error) return res.status(401).send({ message: "Falha na autenticação" });
+        if (error) return HttpResponse.unprocessableError(res);
 
         const token = jwt.sign({
           id_user: result[0].idusers,
@@ -69,7 +69,13 @@ class UserController {
         }, process.env.JWT_KEY, {
           expiresIn: "1h"
         });
-        return HttpResponse.ok(res, "Autenticado com sucesso", token)
+
+        const response = {
+          message: "SuccessLogin",
+          user_token: token
+        }
+
+        return HttpResponse.ok(res, response)
       });
     } catch (error) {
       if (error) return HttpResponse.serverError(res);

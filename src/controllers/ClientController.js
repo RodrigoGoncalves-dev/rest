@@ -52,24 +52,30 @@ class ClientController {
     try {
       const { email, password } = req.body;
 
+      if (email === "" || password.length < 6) return HttpResponse.badRequest(res, new SmallParamError());
+
       const query = 'SELECT * FROM clients WHERE email = ?';
 
       const result = await mysql.execute(query, [email]);
 
-      if (result.length == 0) return HttpResponse.unauthorizedError(res, "Falha na auntenticação");
+      if (result.length == 0) return HttpResponse.unprocessableError(res);
 
       bcrypt.compare(password, result[0].client_password, (error, results) => {
-        if (error) return HttpResponse.unauthorizedError(res, "Falha na auntenticação");
-        if (results) {
-          const token = jwt.sign({
-            id_client: result[0].id_client,
-            email: result[0].email,
-          }, process.env.JWT_KEY, {
-            expiresIn: "1h"
-          });
-          return HttpResponse.ok(res, "Autenticado com sucesso", token)
-        };
-        return HttpResponse.unauthorizedError(res, "Falha na auntenticação");
+        if (error) return HttpResponse.unprocessableError(res);
+
+        const token = jwt.sign({
+          id_client: result[0].idclients,
+          email: result[0].email,
+        }, process.env.JWT_KEY, {
+          expiresIn: "1h"
+        });
+
+        const response = {
+          message: "SuccessLogin",
+          client_token: token
+        }
+
+        return HttpResponse.ok(res, response)
       });
     } catch (error) {
       if (error) return HttpResponse.serverError(res);
