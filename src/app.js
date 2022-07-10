@@ -3,6 +3,8 @@ const morgan = require("morgan");
 const app = express();
 const cors = require("cors");
 
+// Lista de rotas
+
 const routeProduct = require("./routes/products");
 const routeDemand = require("./routes/demands");
 const routeUser = require("./routes/users");
